@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tracking Pengiriman — SITTA | Universitas Terbuka</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+
+  <!-- ① CSS Eksternal -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- ② CSS Internal -->
+  <style>
+    .topbar {
+      height: 72px !important;
+      padding: 0 32px !important;
+    }
+    .logo-box {
+      width: 44px !important;
+      height: 44px !important;
+      font-size: 16px !important;
+      border-radius: 10px !important;
+    }
+    .brand-name { font-size: 18px !important; }
+    .brand-sub  { font-size: 11px !important; }
+    .nav-menu   { top: 72px !important; }
+    .track-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .search-card {
+      background: var(--white); border: 1.5px solid var(--gray-200);
+      border-radius: 13px; padding: 22px; margin-bottom: 20px;
+    }
+    .search-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;
+    }
+    .search-card p { font-size: 13px; color: var(--gray-400); margin-bottom: 16px; }
+    .do-input-row { display: flex; gap: 10px; }
+    .do-input-row input {
+      flex: 1; padding: 12px 14px;
+      border: 1.5px solid var(--gray-200); border-radius: 9px;
+      font-size: 14px; font-family: 'Plus Jakarta Sans', sans-serif;
+      letter-spacing: 0.5px; outline: none; transition: border-color 0.15s;
+    }
+    .do-input-row input:focus { border-color: var(--blue-main); }
+    .do-input-row input::placeholder { letter-spacing: 0; color: var(--gray-400); }
+    .do-hint { font-size: 11px; color: var(--gray-400); margin-top: 8px; }
+    .do-hint span { font-family: monospace; background: var(--gray-100); padding: 2px 6px; border-radius: 4px; }
+
+    .result-wrap { display: none; animation: fadeIn 0.22s ease; }
+    .result-wrap.show { display: block; }
+
+    @media (max-width: 768px) {
+      .track-layout { grid-template-columns: 1fr; }
+      .topbar { height: 58px !important; padding: 0 14px !important; }
+      .nav-menu { top: 58px !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="logo-box">UT</div>
+    <div class="brand-text">
+      <span class="brand-name">SITTA</span>
+      <span class="brand-sub">Universitas Terbuka</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <div class="avatar" id="avatar-initial">N</div>
+      <span id="user-nama" style="font-size:13px;">NAO</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()" type="button">
+      <i class="ti ti-logout" style="font-size:12px;vertical-align:-1px;"></i> Keluar
+    </button>
+  </div>
+</header>
+
+<!-- NAV — dikosongkan, diisi oleh renderNavbar() dari script.js -->
+<nav class="nav-menu"></nav>
+
+<!-- MAIN -->
+<main class="main-content">
+  <div class="page-head">
+    <h1>Tracking Pengiriman</h1>
+    <p>Lacak status pengiriman bahan ajar berdasarkan Nomor Delivery Order</p>
+  </div>
+
+  <!-- Input Pencarian -->
+  <div class="search-card">
+    <h2><i class="ti ti-search" style="font-size:16px;vertical-align:-2px;margin-right:6px;color:var(--blue-main);"></i>Cari Pengiriman</h2>
+    <p>Masukkan Nomor Delivery Order (DO) / Nomor Billing untuk melacak paket</p>
+    <div class="do-input-row">
+      <input type="text" id="inp-do"
+        placeholder="Masukkan No. DO/Billing"
+        maxlength="20"
+        oninput="this.value = this.value.toUpperCase()"
+        aria-label="Nomor Delivery Order" />
+      <button class="btn-primary" onclick="cariDO()" type="button">
+        <i class="ti ti-search"></i> Cari
+      </button>
+    </div>
+    <p class="do-hint">Contoh: <span>2023005459</span></p>
+  </div>
+
+  <!-- Hasil Pencarian -->
+  <div class="result-wrap" id="result-wrap">
+    <div class="track-layout">
+
+      <!-- Kolom kiri: Detail & Status Order -->
+      <div>
+        <!-- Detail Pengiriman -->
+        <div class="tracking-header card-accent" id="detail-card">
+          <h3>Detail Pengiriman</h3>
+          <div class="detail-grid" id="detail-grid"></div>
+        </div>
+
+        <!-- Status Order (horizontal steps) -->
+        <div class="status-order-section">
+          <div class="status-order-title">Status Order</div>
+          <div class="status-order-steps" id="so-steps">
+            <div class="so-step" id="so-1">
+              <div class="so-icon">🛒<div class="so-tick">✓</div></div>
+              <div class="so-label">Order Picking</div>
+            </div>
+            <div class="so-step" id="so-2">
+              <div class="so-icon">📦<div class="so-tick">✓</div></div>
+              <div class="so-label">Packing</div>
+            </div>
+            <div class="so-step" id="so-3">
+              <div class="so-icon">✅<div class="so-tick">✓</div></div>
+              <div class="so-label">Ready To Be Picked Up</div>
+            </div>
+            <div class="so-step" id="so-4">
+              <div class="so-icon">🚚<div class="so-tick">✓</div></div>
+              <div class="so-label">Picked-Up</div>
+            </div>
+            <div class="so-step" id="so-5">
+              <div class="so-icon">🏠<div class="so-tick">✓</div></div>
+              <div class="so-label">Terkirim</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kolom kanan: Riwayat Perjalanan Paket -->
+      <div>
+        <div class="timeline-title">
+          <i class="ti ti-map-search" style="font-size:16px;vertical-align:-2px;margin-right:6px;color:var(--blue-main);"></i>
+          Lacak Pengiriman
+        </div>
+        <div class="timeline-wrap" id="timeline-wrap"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Tidak Ditemukan -->
+  <div id="not-found" style="display:none;" class="card">
+    <div class="empty-state">
+      <i class="ti ti-package-off"></i>
+      <p>Paket tidak ditemukan</p>
+      <small>Pastikan Nomor DO sudah benar atau hubungi UPBJJ-UT terdekat</small>
+    </div>
+  </div>
+
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/script.js"></script>
+<script>
+  /* ── Init ── */
+  cekSesi();
+  renderNavbar('tracking');
+
+  /* ── Cari DO ── */
+  function cariDO() {
+    const val      = document.getElementById('inp-do').value.trim();
+    const hasil    = document.getElementById('result-wrap');
+    const notFound = document.getElementById('not-found');
+    hasil.classList.remove('show');
+    notFound.style.display = 'none';
+
+    if (!val || val.length < 5) {
+      alert('Masukkan minimal 5 karakter Nomor DO/Billing!');
+      return;
+    }
+
+    /* Cari di data berdasarkan noDO */
+    const found = dataTracking.find(d =>
+      d.noDO === val ||
+      d.noDO.includes(val) ||
+      val.includes(d.noDO)
+    );
+
+    if (!found) {
+      notFound.style.display = 'block';
+      return;
+    }
+
+    /* Render detail */
+    document.getElementById('detail-grid').innerHTML = `
+      <div class="detail-field">
+        <label>Nomor Resi / AWB</label>
+        <p style="font-family:monospace;font-size:13px;">${found.noDO}</p>
+      </div>
+      <div class="detail-field">
+        <label>Nama Penerima</label>
+        <p>${found.namaPenerima}</p>
+      </div>
+      <div class="detail-field">
+        <label>Ekspedisi</label>
+        <p>${found.ekspedisi}</p>
+      </div>
+      <div class="detail-field">
+        <label>Tanggal Kirim</label>
+        <p>${found.tanggalKirim}</p>
+      </div>
+      <div class="detail-field">
+        <label>Jenis Paket</label>
+        <p>${found.jenisPaket}</p>
+      </div>
+      <div class="detail-field">
+        <label>Total Pembayaran</label>
+        <p style="color:var(--blue-main);font-weight:700;">${found.totalPembayaran}</p>
+      </div>
+      <div class="detail-field">
+        <label>Kode POS</label>
+        <p>${found.kodepos}</p>
+      </div>
+      <div class="detail-field">
+        <label>Status</label>
+        <p><span class="badge ${found.statusTerkini === 'Terkirim' ? 'badge-selesai' : 'badge-dikirim'}">${found.statusTerkini}</span></p>
+      </div>
+      <div class="detail-field full">
+        <label>Alamat Penerima</label>
+        <p>${found.alamat}</p>
+      </div>
+      <div class="detail-field full">
+        <label>Isi Paket</label>
+        <p>${found.isiPaket.join(', ')}</p>
+      </div>`;
+
+    /* Status order steps */
+    const statusMap = {
+      'Terkirim':         5,
+      'Dalam Pengiriman': 4,
+      'Diproses':         3,
+      'Packing':          2,
+      'Order Picking':    1
+    };
+    const stepCount = statusMap[found.statusTerkini] || 1;
+    for (let i = 1; i <= 5; i++) {
+      const el = document.getElementById('so-' + i);
+      if (el) {
+        i <= stepCount ? el.classList.add('done') : el.classList.remove('done');
+      }
+    }
+
+    /* Timeline perjalanan paket */
+    document.getElementById('timeline-wrap').innerHTML = found.perjalanan.map((p, idx) => `
+      <div class="tl-item">
+        ${idx < found.perjalanan.length - 1 ? '<div class="tl-line"></div>' : ''}
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <div class="tl-body">
+          <div class="tl-time">${p.tanggal} - ${p.waktu}</div>
+          <div class="tl-card">
+            <div class="tl-code">${p.kode}</div>
+            <div class="tl-desc">${p.keterangan}</div>
+          </div>
+        </div>
+      </div>`).join('');
+
+    hasil.classList.add('show');
+    hasil.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* Enter key */
+  document.getElementById('inp-do').addEventListener('keydown', e => {
+    if (e.key === 'Enter') cariDO();
+  });
+</script>
+</body>
+</html>

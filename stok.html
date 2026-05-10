@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Informasi Bahan Ajar — SITTA | Universitas Terbuka</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+
+  <!-- ① CSS Eksternal -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- ② CSS Internal -->
+  <style>
+    /* Topbar lebih besar */
+    .topbar {
+      height: 72px !important;
+      padding: 0 32px !important;
+    }
+    .logo-box {
+      width: 44px !important;
+      height: 44px !important;
+      font-size: 16px !important;
+      border-radius: 10px !important;
+    }
+    .brand-name { font-size: 18px !important; }
+    .brand-sub  { font-size: 11px !important; }
+    .nav-menu   { top: 72px !important; }
+    .add-form-card {
+      background: var(--white); border: 1.5px solid var(--gray-200);
+      border-radius: 13px; padding: 20px; margin-bottom: 20px;
+      border-left: 4px solid var(--yellow);
+    }
+    .add-form-title {
+      font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .add-form-grid { display: grid; grid-template-columns: repeat(3, 1fr) 80px 80px; gap: 10px; align-items: end; }
+    .add-form-grid .form-group { margin-bottom: 0; }
+    .stok-badge-wrap { display: flex; align-items: center; gap: 6px; }
+
+    /* Row highlight saat baru ditambah */
+    @keyframes rowIn { from{background:#E1F5EE;} to{background:transparent;} }
+    .row-new { animation: rowIn 1.5s ease forwards; }
+
+    /* Tombol hapus per baris */
+    .row-del-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--gray-300); font-size: 15px; padding: 3px;
+      transition: color 0.15s;
+    }
+    .row-del-btn:hover { color: var(--red); }
+
+    @media (max-width: 768px) {
+      .add-form-grid { grid-template-columns: 1fr 1fr; }
+      .topbar { height: 58px !important; padding: 0 14px !important; }
+      .nav-menu { top: 58px !important; }
+    }
+    @media (max-width: 480px) {
+      .add-form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="logo-box">UT</div>
+    <div class="brand-text">
+      <span class="brand-name">SITTA</span>
+      <span class="brand-sub">Universitas Terbuka</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <div class="avatar" id="avatar-initial">N</div>
+      <span id="user-nama" style="font-size:13px;">NAO</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()" type="button">
+      <i class="ti ti-logout" style="font-size:12px;vertical-align:-1px;"></i> Keluar
+    </button>
+  </div>
+</header>
+
+<!-- NAV — dikosongkan, diisi oleh renderNavbar() dari script.js -->
+<nav class="nav-menu"></nav>
+
+<!-- MAIN -->
+<main class="main-content">
+  <div class="page-head">
+    <h1>Informasi Stok Bahan Ajar</h1>
+    <p>Peragaan data bahan ajar dari <code style="font-size:12px;background:var(--gray-100);padding:2px 6px;border-radius:4px;">dataBahanAjar</code> pada <code style="font-size:12px;background:var(--gray-100);padding:2px 6px;border-radius:4px;">data.js</code></p>
+  </div>
+
+  <!-- Form Tambah Stok Baru -->
+  <div class="add-form-card">
+    <div class="add-form-title">
+      <i class="ti ti-plus" style="color:var(--blue-main);"></i>
+      Tambah Baris Stok Baru
+    </div>
+    <div class="add-form-grid">
+      <div class="form-group" id="fg-lokasi">
+        <label for="add-lokasi">Kode Lokasi *</label>
+        <input type="text" id="add-lokasi" placeholder="OTMP01" />
+        <span class="validation-msg">Wajib diisi</span>
+      </div>
+      <div class="form-group" id="fg-kode">
+        <label for="add-kode">Kode Barang *</label>
+        <input type="text" id="add-kode" placeholder="SKOM4101" style="text-transform:uppercase;" />
+        <span class="validation-msg">Wajib diisi</span>
+      </div>
+      <div class="form-group" id="fg-nama">
+        <label for="add-nama">Nama Barang *</label>
+        <input type="text" id="add-nama" placeholder="Nama modul" />
+        <span class="validation-msg">Wajib diisi</span>
+      </div>
+      <div class="form-group">
+        <label for="add-edisi">Edisi</label>
+        <input type="text" id="add-edisi" placeholder="1" />
+      </div>
+      <div class="form-group" id="fg-stok">
+        <label for="add-stok">Stok *</label>
+        <input type="text" id="add-stok" placeholder="0" />
+        <span class="validation-msg">Wajib angka</span>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:9px; align-items:center;">
+      <button class="btn-primary" onclick="tambahStok()" type="button">
+        <i class="ti ti-plus"></i> Tambah ke Tabel
+      </button>
+      <button class="btn-secondary" onclick="resetForm()" type="button">
+        Reset
+      </button>
+      <!-- ③ Inline style: counter dinamis -->
+      <span id="row-counter" style="font-size:12px; color:var(--gray-400); margin-left:auto;">
+        Memuat data…
+      </span>
+    </div>
+  </div>
+
+  <!-- Filter & Search -->
+  <div class="tbl-toolbar">
+    <div style="position:relative; flex:1; min-width:180px;">
+      <input type="text" id="stok-search" placeholder="Cari kode atau nama barang…" oninput="renderTabel()" style="padding-left:34px;" />
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:14px;">🔍</span>
+    </div>
+    <select id="stok-filter-jenis" onchange="renderTabel()">
+      <option value="">Semua Jenis</option>
+      <option value="BMP">BMP</option>
+      <option value="Suplemen">Suplemen</option>
+    </select>
+    <select id="stok-filter-stok" onchange="renderTabel()">
+      <option value="">Semua Stok</option>
+      <option value="ada">Stok Ada</option>
+      <option value="habis">Stok Habis</option>
+    </select>
+    <span class="tbl-counter" id="stok-counter">— item</span>
+  </div>
+
+  <!-- Tabel Stok -->
+  <div class="tbl-wrap">
+    <table aria-label="Tabel Informasi Stok Bahan Ajar">
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>Kode Lokasi</th>
+          <th>Kode Barang</th>
+          <th>Nama Barang</th>
+          <th>Jenis</th>
+          <th>Edisi</th>
+          <th>Stok</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="stok-body"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- Modal Konfirmasi Hapus -->
+<div class="modal-overlay" id="modal-hapus" role="dialog" aria-modal="true">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-hapus')">✕</button>
+    <div class="modal-icon" style="background:var(--red-light);">🗑️</div>
+    <h3>Hapus Data Stok?</h3>
+    <p>Baris stok <strong id="hapus-nama"></strong> akan dihapus dari tabel.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-hapus')" style="flex:1;" type="button">Batal</button>
+      <button id="btn-konfirm-hapus"
+        style="flex:2;padding:10px;background:var(--red);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;"
+        type="button">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/script.js"></script>
+<script>
+  /* ── Init ── */
+  cekSesi();
+  renderNavbar('stok');
+
+  /* ── State: salin dari data.js agar bisa dimodifikasi ── */
+  let stokData = dataBahanAjar.map((b, i) => ({ ...b, _id: i }));
+  let nextId   = stokData.length;
+  let hapusTargetId = null;
+
+  /* ── Render Tabel ── */
+  function renderTabel(highlightId = null) {
+    const q      = (document.getElementById('stok-search').value || '').toLowerCase();
+    const jenis  = document.getElementById('stok-filter-jenis').value;
+    const stokF  = document.getElementById('stok-filter-stok').value;
+
+    const filtered = stokData.filter(b => {
+      const mQ = !q || b.kodeBarang.toLowerCase().includes(q) || b.namaBarang.toLowerCase().includes(q) || b.kodeLokasi.toLowerCase().includes(q);
+      const mJ = !jenis  || b.jenisBarang === jenis;
+      const mS = !stokF  || (stokF === 'ada' ? b.stok > 0 : b.stok === 0);
+      return mQ && mJ && mS;
+    });
+
+    document.getElementById('stok-counter').textContent = filtered.length + ' item';
+    document.getElementById('row-counter').textContent  = stokData.length + ' baris data';
+
+    const tbody = document.getElementById('stok-body');
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr class="tbl-empty"><td colspan="9">Tidak ada data yang sesuai filter</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map((b, i) => {
+      const stokClass = b.stok > 50 ? 'badge-ok' : b.stok > 0 ? 'badge-low' : 'badge-nil';
+      const stokLabel = b.stok > 50 ? 'Tersedia' : b.stok > 0 ? 'Sedikit'  : 'Habis';
+      const isNew     = highlightId !== null && b._id === highlightId;
+      return `<tr class="${isNew ? 'row-new' : ''}">
+        <td style="color:var(--gray-400);font-size:12px;">${i + 1}</td>
+        <td style="font-family:monospace;font-size:12px;font-weight:700;color:var(--blue-main);">${b.kodeLokasi}</td>
+        <td style="font-family:monospace;font-size:12px;font-weight:700;">${b.kodeBarang}</td>
+        <td style="font-weight:600;">${b.namaBarang}</td>
+        <td><span class="badge badge-dikirim">${b.jenisBarang}</span></td>
+        <td style="text-align:center;">${b.edisi}</td>
+        <td style="text-align:center;font-weight:700;${b.stok===0?'color:var(--red);':''}">${b.stok.toLocaleString('id')}</td>
+        <td><span class="badge ${stokClass}">${stokLabel}</span></td>
+        <td>
+          <button class="row-del-btn" onclick="konfirmasiHapus(${b._id}, '${b.namaBarang.replace(/'/g,"\\'")}')" type="button" title="Hapus baris ini">
+            <i class="ti ti-trash"></i>
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  renderTabel();
+
+  /* ── Tambah Stok Baru (manipulasi DOM) ── */
+  function tambahStok() {
+    const lokasi = document.getElementById('add-lokasi').value.trim().toUpperCase();
+    const kode   = document.getElementById('add-kode').value.trim().toUpperCase();
+    const nama   = document.getElementById('add-nama').value.trim();
+    const edisi  = parseInt(document.getElementById('add-edisi').value) || 1;
+    const stok   = parseInt(document.getElementById('add-stok').value);
+
+    /* Validasi */
+    let valid = true;
+    const fields = [
+      { id:'fg-lokasi', val:lokasi, msg:'Kode Lokasi wajib diisi' },
+      { id:'fg-kode',   val:kode,   msg:'Kode Barang wajib diisi' },
+      { id:'fg-nama',   val:nama,   msg:'Nama Barang wajib diisi' }
+    ];
+    fields.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (!f.val) { el.classList.add('error'); valid = false; }
+      else el.classList.remove('error');
+    });
+    const fgStok = document.getElementById('fg-stok');
+    if (isNaN(stok) || stok < 0) { fgStok.classList.add('error'); valid = false; }
+    else fgStok.classList.remove('error');
+    if (!valid) { alert('Harap lengkapi semua field yang wajib diisi!'); return; }
+
+    /* Cek duplikat kode barang */
+    if (stokData.find(b => b.kodeBarang === kode)) {
+      alert('Kode Barang ' + kode + ' sudah ada di tabel!'); return;
+    }
+
+    /* Tambah ke array */
+    const newItem = { _id: nextId++, kodeLokasi: lokasi, kodeBarang: kode, namaBarang: nama, jenisBarang: 'BMP', edisi, stok };
+    stokData.push(newItem);
+    renderTabel(newItem._id);
+    resetForm();
+
+    /* Clear filter agar baris baru terlihat */
+    document.getElementById('stok-search').value = '';
+    document.getElementById('stok-filter-jenis').value = '';
+    document.getElementById('stok-filter-stok').value  = '';
+    renderTabel(newItem._id);
+  }
+
+  function resetForm() {
+    ['add-lokasi','add-kode','add-nama','add-edisi','add-stok'].forEach(id => document.getElementById(id).value = '');
+    ['fg-lokasi','fg-kode','fg-nama','fg-stok'].forEach(id => document.getElementById(id).classList.remove('error'));
+  }
+
+  /* ── Hapus Baris ── */
+  function konfirmasiHapus(id, nama) {
+    hapusTargetId = id;
+    document.getElementById('hapus-nama').textContent = nama;
+    openModal('modal-hapus');
+    document.getElementById('btn-konfirm-hapus').onclick = function() {
+      stokData = stokData.filter(b => b._id !== hapusTargetId);
+      closeModal('modal-hapus');
+      renderTabel();
+    };
+  }
+
+  /* ── Modal ── */
+  function openModal(id)  { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) { if (e.target===this) this.classList.remove('open'); });
+  });
+
+  /* Enter pada form tambah */
+  ['add-lokasi','add-kode','add-nama','add-edisi','add-stok'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') tambahStok(); });
+  });
+</script>
+</body>
+</html>
